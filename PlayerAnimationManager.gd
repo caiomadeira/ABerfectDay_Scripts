@@ -21,13 +21,14 @@ enum PlayerIDLEManager {
 }
 
 enum PlayeraActionManager {
-	ANIMATION_CLOCK_ACTION = 0
+	ANIMATION_CLOCK_ACTION = 0,
+	ANIMATION_SMOKING_ACTION = 1
 }
 
-@onready var player2d_lefthand = Sprite3D
-@onready var player2d_righthand = Sprite3D
-@onready var player2d_lefthand_animation = Sprite3D
-@onready var player2d_righthand_animation = Sprite3D
+@onready var player2d_lefthand = null
+@onready var player2d_righthand = null
+@onready var player2d_lefthand_animation = null
+@onready var player2d_righthand_animation = null
 
 func setup_player_animations(animation_manager: PlayerAnimationManager, raycast: RayCast3D) -> void:
 	if player2d_lefthand != null and player2d_righthand != null and player2d_lefthand_animation != null and player2d_righthand_animation != null:
@@ -43,12 +44,22 @@ func setup_player_animations(animation_manager: PlayerAnimationManager, raycast:
 				_:
 					_ANIMATION_IDLE(PlayerIDLEManager)
 	else:
-		assert("Player hands or animation player is null.")
+		print("Player hands or animation player is null.")
 				
 func _ANIMATION_ACTION(action_manager: PlayeraActionManager):
 	match action_manager:
 		0: # CLOCK
 			_ACTION_CLOCK()
+		1: # SMOKING
+			_ANIMATION_SMOKING()
+			
+func _ANIMATION_SMOKING():
+	if GlobalScript.can_smoke and GlobalScript.is_smoking:
+		print("player is smoking")
+		player2d_lefthand.visible = false
+		player2d_righthand.position.x = -0.221
+		#player2d_animations(Player2dAnimations.ANIMATION_SMOKING)
+		player2d_righthand_animation.play("action_smoking")
 
 func _ACTION_CLOCK():
 	if GlobalScript.is_looking_clock:
