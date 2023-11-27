@@ -1,3 +1,4 @@
+class_name Inventory
 extends Node
 
 var icon = TextureRect.new()

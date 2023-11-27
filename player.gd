@@ -1,4 +1,3 @@
-# MesdhInstance3D > Geometry > Cast Shadow = OFF --> Hides player shadow mesh
 class_name Player
 extends CharacterBody3D
 
@@ -70,6 +69,9 @@ var cameraBobUpDown := 0.3
 var distanceFootstep: = 0.0
 var playFootstep: float = 3.0
 
+# signals
+signal holding_item
+
 func _ready():
 	scene_did_load()
 
@@ -114,7 +116,6 @@ func _process(delta):
 	if GlobalScript.is_mov_enable == true:
 		if direction != null:
 			process_camera_walk_shake(delta)
-		
 		if floorcast.is_colliding():
 			var walkingTerrain = floorcast.get_collider().get_parent()
 			if walkingTerrain != null and walkingTerrain.get_groups().size() > 0:
@@ -132,7 +133,7 @@ func _process(delta):
 		player2d_animations(Player2dAnimations.ANIMATION_WILL_BE_INTERACT)
 	else:
 		_ANIMATION_idle()
-				# CUP IDLE
+		# CUP IDLE
 		if GlobalScript.is_holding_item and inventory.items.has("Cup"):
 			GlobalScript.player_can_interact = false
 			player2d_lefthand.visible = false
@@ -265,6 +266,7 @@ func _interact():
 		if interacted != null and interacted.is_in_group("Interactable") and interacted.has_method("action_use"):
 			if GlobalScript.can_smoke == false or GlobalScript.player_can_interact == true:
 				interacted.action_use()
+				holding_item.emit()
 			else:
 				print("Cannot interact with a" + str(interactcast.get_collider().name) + " with a cigarette in hand.")
 				
