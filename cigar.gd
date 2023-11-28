@@ -53,16 +53,19 @@ func _input(_event):
 	if GlobalScript.can_smoke:
 		if Input.is_action_just_pressed("click1"):
 			#print("do smoke")
+			GlobalScript.is_holding_item = true
 			GlobalScript.is_smoking = true
 			GlobalScript.is_mov_enable = false
 			
 		if Input.is_action_just_released("click1"):
 			#print("stopped smoke")
+			GlobalScript.is_holding_item = true
 			GlobalScript.is_smoking = false
 			GlobalScript.is_mov_enable = true
 			
-		if Input.is_action_just_pressed("leave"):
+		if Input.is_action_just_pressed("f - leave"):
 			#print("throw cigar away")
+			GlobalScript.is_holding_item = false
 			GlobalScript.is_smoking = false
 			GlobalScript.can_smoke = false
 			cigar_process = 0

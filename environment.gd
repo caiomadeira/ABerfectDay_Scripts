@@ -36,9 +36,9 @@ func _process(delta):
 			directional_light.position.y += delta / 60
 			directional_light.position.x += delta / 60
 			directional_light.rotation.x -= delta / 60
-			print("Light position Y: " + str(directional_light.position.y))
-			print("Light position X: " + str(directional_light.position.x))
-			print("Light rotation X: " + str(directional_light.rotation.x))
+			#print("Light position Y: " + str(directional_light.position.y))
+			#print("Light position X: " + str(directional_light.position.x))
+			#print("Light rotation X: " + str(directional_light.rotation.x))
 	else:
 		directional_light.position == Vector3(12, 30, 0)
 		directional_light.rotation = Vector3(-90, -90, 0)
