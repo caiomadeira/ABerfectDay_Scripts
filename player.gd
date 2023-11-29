@@ -16,7 +16,7 @@ extends CharacterBody3D
 @onready var game_utils = get_node("/root/GlobalGameUtils")
 @onready var UI_utils = get_node("/root/GlobalUi")
 #@onready var inventory = get_node("/root/Inventory")
-@onready var inventory = Inventory.new() as Inventory
+@onready var inventory = get_node("/root/Inventory")
 # player 2d
 @onready var player_main = $"."
 @onready var player_collision = $CollisionShape3D
@@ -114,7 +114,6 @@ func process_camera_basic_moviment(event):
 							
 func _process(delta):
 	if GlobalScript.is_mov_enable == true:
-		_interact()
 		if direction != null:
 			process_camera_walk_shake(delta)
 		if floorcast.is_colliding():
@@ -123,19 +122,14 @@ func _process(delta):
 				var terrainGroup = walkingTerrain.get_groups()[0]
 				process_ground_sounds(terrainGroup)
 		if !GlobalScript.is_spying:
-			#prompt_text()
 			_control_label_text()
 			_clock(delta)
 	else:
 		mesh_utils.viewer_control()
 		playerAnimationManager.play(interactcast, playerAnimationManager.PlayerActionManager, 
 		playerAnimationManager.PlayerActionManager.ANIMATION_SMOKING_ACTION)
-	
-	#if interactcast.is_colliding():
-	#else:
-
 		
-func prompt_text():
+func will_interact():
 	if interactcast.is_colliding():
 		if is_instance_valid(interactcast.get_collider()):
 			if interactcast.get_collider().is_in_group("Interactable"):
@@ -144,9 +138,6 @@ func prompt_text():
 				match interactcast.get_collider().name:
 					"cigar":
 						GlobalScript.show_item_information = true
-					"Door":
-						prompt_label.text = "[E] - " + interactcast.get_collider().type
-						prompt_label.visible = true
 					_:
 						GlobalScript.show_item_information = false
 						prompt_label.set_position(Vector2(10, game_utils.get_resolution().y - 60))	
@@ -154,10 +145,13 @@ func prompt_text():
 						prompt_label.visible = true
 			else:
 				prompt_label.visible = false
-				
 	else:
-		playerAnimationManager.play(interactcast, playerAnimationManager.PlayerIDLEManager, 
-		playerAnimationManager.PlayerIDLEManager.ANIMATION_DEFAULT_IDLE)
+		if !GlobalScript.is_holding_item:
+			playerAnimationManager.play(interactcast, playerAnimationManager.PlayerIDLEManager, 
+			playerAnimationManager.PlayerIDLEManager.ANIMATION_DEFAULT_IDLE)
+		else:
+			playerAnimationManager.play(interactcast, playerAnimationManager.PlayerIDLEManager,
+			playerAnimationManager.PlayerIDLEManager.ANIMATION_HOLDING_ITEM)
 		prompt_label.visible = false
 		GlobalScript.show_item_information = false
 		
@@ -172,6 +166,8 @@ func _control_label_text():
 		control_label.text = "[F] - Leave"
 	elif GlobalScript.can_smoke:
 		control_label.text = "[BTN 1] - To Smoke\n [F] - To throw cigarbox away"
+	elif GlobalScript.is_holding_item:
+		control_label.text = "[F] - Drop item"
 	else:
 		control_label.visible = false
 
@@ -212,7 +208,15 @@ func _physics_process(delta):
 	_process_movement(delta)
 	if GlobalScript.is_mov_enable == true:
 		if !GlobalScript.is_spying:
-			prompt_text()
+			will_interact()
+			_interact()
+			_has_dropped_item()
+
+			
+func _has_dropped_item():
+	if playerAnimationManager.current_object != null and Inventory.items.has(playerAnimationManager.current_object) and Input.is_action_just_pressed("f - leave"):
+		playerAnimationManager.current_object = null
+		GlobalScript.is_holding_item = false
 
 # Player Basic Features
 func _process_movement(_delta):
@@ -249,42 +253,34 @@ func _clock(delta):
 	hours_label.text = time_system.start_global_clock(delta)
 	if Input.is_action_just_pressed("h - clock") and !GlobalScript.is_looking_clock:
 		GlobalScript.is_looking_clock = true
-		# player2d_animations(Player2dAnimations.ANIMATION_CLOCK)
 		playerAnimationManager.play(interactcast,playerAnimationManager.PlayerActionManager, 
 		playerAnimationManager.PlayerActionManager.ANIMATION_CLOCK_ACTION)
-		# player2d_action(Player2dActions.ACTION_CLOCK)
-		print("clock pressed: " + str(GlobalScript.is_looking_clock))	
 		
 	if Input.is_action_just_released("h - clock") and GlobalScript.is_looking_clock:
 		GlobalScript.is_looking_clock = false
 		playerAnimationManager.play(interactcast,playerAnimationManager.PlayerActionManager,
 		playerAnimationManager.PlayerActionManager.ANIMATION_CLOCK_ACTION)
 		_ACTION_clock()
-		print("clock released: " + str(GlobalScript.is_looking_clock))
 		
 func _interact():
 	if Input.is_action_just_pressed("interact"):
 		var interacted = interactcast.get_collider()
 		if interacted != null and interacted.is_in_group("Interactable") and interacted.has_method("action_use"):
-			playerAnimationManager.raycast = interactcast
-			print("> Player class:" +  str(interacted.name) + ": Interacted")
+			playerAnimationManager.current_object = interacted.type
 			if GlobalScript.can_smoke == false or GlobalScript.player_can_interact == true:
 				interacted.action_use()
-				# holding_item.emit()
 			else:
 				print("Cannot interact with a" + str(interactcast.get_collider().name) + " with a cigarette in hand.")
 				
-		if interacted != null and interacted.is_in_group("Interactable") and interacted.is_in_group("3DViewerObj"):
+		elif interacted != null and interacted.is_in_group("Interactable") and interacted.is_in_group("3DViewerObj"):
 			match interacted.type:
 				"Game1":
-					#UI_utils.setup_3dviewer_ui(camera_3d, interacted.type, "Description")
 					setup3d_viewer(mesh_utils._get_rigidbody_mesh(interacted))
 				"Game2":
 					setup3d_viewer(mesh_utils._get_rigidbody_mesh(interacted))
 				
 		else:
 			pass
-
 
 func setup3d_viewer(interacted: Object):
 	if GlobalScript.is_in_3d_viewer:
@@ -350,23 +346,4 @@ func _ACTION_clock():
 #					DELEGATE
 # ::::::::::::::::::::::::::::::::::::::::::::::
 # ::::::::::::::::::::::::::::::::::::::::::::::
-
-func _on_animated_sprite_3d_frame_changed():
-	#print("frame changed: " + str(player2d_righthand_animation.frame) + " of " + str(player2d_righthand_animation.animation))
-	if player2d_lefthand_animation.animation == "action_will_see_clock":
-		if player2d_lefthand_animation.frame == 4:
-			player2d_lefthand_animation.stop()
-	
-	if player2d_righthand_animation.animation == "interact_cup":
-		#print("animation: click")
-		if player2d_righthand_animation.frame == 3:
-			#print("frame 2")
-			GlobalScript.animation_has_played = true
-			#print("stop")
-	
-	else:	
-		if !player2d_righthand_animation.animation == "idle_cigarette" or !player2d_righthand_animation.animation == "idle" or player2d_righthand_animation.animation == "action_smoking":
-			if !player2d_righthand_animation.animation == "action_cup_empty":
-				if player2d_righthand_animation.frame == 2:
-					GlobalScript.animation_has_played = true
 				

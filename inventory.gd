@@ -1,4 +1,3 @@
-class_name Inventory
 extends Node
 
 var icon = TextureRect.new()
@@ -7,25 +6,19 @@ var icon = TextureRect.new()
 @onready var default_icon = preload("res://Assets/Textures/UI/icons/default_icon.png")
 #@onready var player_node = get_node("/root/Level1/SubViewportContainer/SubViewport/Player")
 
-var objects: Array = []
+var items: Array = []
 var player: Player = Player.new() as Player
 	
 func add_item(name):
-	if player != null:
-		if !objects.has(name):
-			_draw_icon(name)
-			objects.append(name)
-	else:
-		print("[+] Inventory: Player is null")
+	if !items.has(name):
+		_draw_icon(name)
+		items.append(name)
 
 func remove_item(name):
-	if player != null:
-		if objects.has(name):
-			if is_instance_valid(icon):
-				player.remove_child(icon)
-				objects.erase(name)
-	else:
-		print("[+] Inventory: Player is null")
+	if items.has(name):
+		if is_instance_valid(icon):
+			player.remove_child(icon)
+			items.erase(name)
 
 func _draw_icon(name):
 	if player != null:

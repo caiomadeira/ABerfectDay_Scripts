@@ -1,7 +1,7 @@
 extends Interactable
 
 #@onready var inventory = get_node("/root/Inventory")
-@onready var inventory = Inventory.new() as Inventory
+@onready var inventory = get_node("/root/Inventory")
 @onready var animation_player = $AnimationPlayer
 
 var is_open := false
@@ -20,7 +20,7 @@ func _input(event):
 	pass
 
 func action_use():
-	if is_locked and !is_instance_valid(actual_key) and inventory.objects.has("Key"):
+	if is_locked and !is_instance_valid(actual_key) and Inventory.items.has("Key"):
 		is_locked = false
 		GlobalScript.is_holding_item = false
 		inventory.remove_item("Key")

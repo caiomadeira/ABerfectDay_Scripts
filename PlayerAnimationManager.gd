@@ -36,12 +36,13 @@ enum PlayerActionManager {
 	ANIMATION_CLOCK_ACTION = 0,
 	ANIMATION_SMOKING_ACTION = 1
 }
+
 var player = Player.new()
-var inventory = Inventory.new()
 var player2d_lefthand = player.player2d_lefthand
 var player2d_righthand = player.player2d_righthand
 var player2d_lefthand_animation = player.player2d_lefthand_animation
 var player2d_righthand_animation = player.player2d_righthand_animation
+var current_object = null
 
 # usar um sinal para ver se a funcao foi chamada
 func setup_player_animations(rightHand: Sprite3D, leftHand: Sprite3D, righthand_animation: AnimatedSprite3D, lefthand_animation: AnimatedSprite3D):
@@ -49,7 +50,8 @@ func setup_player_animations(rightHand: Sprite3D, leftHand: Sprite3D, righthand_
 	player2d_righthand = rightHand
 	player2d_lefthand_animation = lefthand_animation
 	player2d_righthand_animation = righthand_animation
-	print("[+][PlayerAnimationManager] - SETUP FINISHED: ")
+	print("[+][PlayerAnimationManager] - SETUP FINISHED")
+	print("[+][PlayerAnimationManager] - SETUP FINISHED")
 
 func play(interactcast: RayCast3D, manager, animation: int):
 	var config: Array = []
@@ -99,24 +101,25 @@ func _animation_config(manager, animation, animation_group) -> Array:
 		
 func _player_animations(interactcast: RayCast3D, animation_manager: PlayerAnimationState, idle = null, action = null) -> void:
 	if player2d_lefthand != null and player2d_righthand != null and player2d_lefthand_animation != null and player2d_righthand_animation != null:
-		if GlobalScript.player_can_interact:
 				match animation_manager:
 					0:
-						if interactcast != null:
+						if interactcast != null and GlobalScript.player_can_interact:
 							_ANIMATION_WILL_INTERACT(interactcast)
 						else:
-							print("RayCast is null.")
+							#print("RayCast is null. or can interact is false")
+							pass
 					1:
-						if idle != null:
-							_ANIMATION_IDLE(idle)
+						if idle != null and interactcast != null:
+							_ANIMATION_IDLE(idle, interactcast)
 					2:
 						if action != null:
 							_ANIMATION_ACTION(action)
 					_:
-						if idle != null:
-							_ANIMATION_IDLE(idle)
+						if idle != null and interactcast != null:
+							_ANIMATION_IDLE(idle, interactcast)
 	else:
-		print("Player hands or animation player is null.")
+		#print("Player hands or animation player is null.")
+		pass
 				
 func _ANIMATION_ACTION(action_manager: PlayerActionManager):
 	match action_manager:
@@ -137,8 +140,7 @@ func _ACTION_CLOCK():
 		player2d_righthand_animation.visible = true
 		player2d_lefthand_animation.flip_h = false
 	
-func _ANIMATION_IDLE(idle_manager: PlayerIDLEManager):
-	GlobalScript.animation_has_played = false
+func _ANIMATION_IDLE(idle_manager: PlayerIDLEManager, interactcast: RayCast3D):
 	if !GlobalScript.is_resting:
 		match idle_manager:
 			0: # DEFAULT
@@ -146,22 +148,25 @@ func _ANIMATION_IDLE(idle_manager: PlayerIDLEManager):
 			1: # CIGAR
 				_PROCESS_ANIMATION("idle_cigarbox", "IDLE", "cigar")
 			2: # HOLDING ITEM
-				#print("INVENOTRY.ITEMS: ", inventory.objects) 
-				if GlobalScript.is_holding_item:
-					for object in HOLDING_IDLE_ANIMATION.keys():
-						if inventory.objects.has(object) and HOLDING_IDLE_ANIMATION[object] is Array:
-							#for animation in HOLDING_IDLE_ANIMATION[object]:
-							_PROCESS_ANIMATION("action_cup_empty", "IDLE", object)
+				print("INVENTORY.ITEMS: ", Inventory.items) 
+				if GlobalScript.is_holding_item and current_object != null:
+					print("holding item")
+					print("inventory: ", Inventory.items)
+					print("interacted object name: ", current_object)
+					_PROCESS_ANIMATION("action_cup_empty", "IDLE", current_object)
+				else:
+					pass
 	else:
 		player2d_righthand.visible = false
 
 func _ANIMATION_WILL_INTERACT(interactcast: RayCast3D):
 	if interactable_animation.keys().has(interactcast.get_collider().name):		
-			print("object will interact name: ", interactcast.get_collider().name)
-			print("animation for object: ", interactable_animation[interactcast.get_collider().name])
+			#print("object will interact name: ", interactcast.get_collider().name)
+			#print("animation for object: ", interactable_animation[interactcast.get_collider().name])
 			_PROCESS_ANIMATION(interactable_animation[interactcast.get_collider().name], "WILL_INTERACT", interactcast.get_collider().name)
 	else:
-		print("Is Not in DICTIONARY OF INTERACTABLE WITH ANIMATION: ", interactcast.get_collider())
+		#print("Is Not in DICTIONARY OF INTERACTABLE WITH ANIMATION: ", interactcast.get_collider())
+		pass
 					
 func _PROCESS_ANIMATION(animation: String, type: String, object: String = ""):
 	match type:
@@ -182,7 +187,7 @@ func _PROCESS_ANIMATION(animation: String, type: String, object: String = ""):
 					else:
 						GlobalScript.player_can_interact = false
 				"cup":
-					if GlobalScript.is_holding_item and inventory.objects.has("cup"):
+					if GlobalScript.is_holding_item and Inventory.items.has("cup"):
 						GlobalScript.player_can_interact = false
 						player2d_lefthand.visible = false
 						player2d_righthand.visible = true
@@ -191,7 +196,7 @@ func _PROCESS_ANIMATION(animation: String, type: String, object: String = ""):
 					else:
 						GlobalScript.player_can_interact = true
 				"Key":
-					if inventory.objects.has("Key") and GlobalScript.is_holding_item:
+					if Inventory.items.has("Key") and GlobalScript.is_holding_item:
 						player2d_righthand_animation.play(animation)
 				"":
 					# DEFAULT IDLE
