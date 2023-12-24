@@ -1,7 +1,6 @@
 extends Interactable
 
 @onready var player_node = get_node("/root/Level1/SubViewportContainer/SubViewport/Player")
-#@onready var inventory = get_node("/root/Inventory")
 @onready var inventory = get_node("/root/Inventory")
 @onready var cup_mesh = $cup/cup2
 

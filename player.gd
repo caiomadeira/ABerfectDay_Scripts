@@ -168,6 +168,8 @@ func _control_label_text():
 		control_label.text = "[BTN 1] - To Smoke\n [F] - To throw cigarbox away"
 	elif GlobalScript.is_holding_item:
 		control_label.text = "[F] - Drop item"
+		control_label.add_theme_font_size_override("font_size", 16)
+		control_label.set_position(Vector2(10, game_utils.get_resolution().y - 40))	
 	else:
 		control_label.visible = false
 
@@ -253,6 +255,7 @@ func _clock(delta):
 	hours_label.text = time_system.start_global_clock(delta)
 	if Input.is_action_just_pressed("h - clock") and !GlobalScript.is_looking_clock:
 		GlobalScript.is_looking_clock = true
+		_ACTION_clock()
 		playerAnimationManager.play(interactcast,playerAnimationManager.PlayerActionManager, 
 		playerAnimationManager.PlayerActionManager.ANIMATION_CLOCK_ACTION)
 		
@@ -260,7 +263,6 @@ func _clock(delta):
 		GlobalScript.is_looking_clock = false
 		playerAnimationManager.play(interactcast,playerAnimationManager.PlayerActionManager,
 		playerAnimationManager.PlayerActionManager.ANIMATION_CLOCK_ACTION)
-		_ACTION_clock()
 		
 func _interact():
 	if Input.is_action_just_pressed("interact"):
@@ -337,7 +339,7 @@ func _ACTION_clock():
 	if GlobalScript.is_looking_clock:
 		hours_label.visible = true
 		hours_label.z_index = -1
-		#hours_label.position = Vector2(200, 500)
+		# hours_label.position = Vector2(200, 500)
 	else:
 		hours_label.visible = false
 			

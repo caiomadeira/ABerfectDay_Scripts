@@ -150,10 +150,11 @@ func _ANIMATION_IDLE(idle_manager: PlayerIDLEManager, interactcast: RayCast3D):
 			2: # HOLDING ITEM
 				print("INVENTORY.ITEMS: ", Inventory.items) 
 				if GlobalScript.is_holding_item and current_object != null:
-					print("holding item")
-					print("inventory: ", Inventory.items)
-					print("interacted object name: ", current_object)
-					_PROCESS_ANIMATION("action_cup_empty", "IDLE", current_object)
+					match current_object:
+						"cup":
+							_PROCESS_ANIMATION("action_cup_empty", "IDLE", current_object)
+						"Key":
+							_PROCESS_ANIMATION("with_key", "IDLE", current_object)
 				else:
 					pass
 	else:
@@ -196,8 +197,14 @@ func _PROCESS_ANIMATION(animation: String, type: String, object: String = ""):
 					else:
 						GlobalScript.player_can_interact = true
 				"Key":
-					if Inventory.items.has("Key") and GlobalScript.is_holding_item:
+					if GlobalScript.is_holding_item and Inventory.items.has("Key"):
+						GlobalScript.player_can_interact = false
+						player2d_lefthand.visible = false
+						player2d_righthand.visible = true
 						player2d_righthand_animation.play(animation)
+						player2d_lefthand.visible = false
+					else:
+						GlobalScript.player_can_interact = true
 				"":
 					# DEFAULT IDLE
 					if !GlobalScript.is_looking_clock and !GlobalScript.is_holding_item:
