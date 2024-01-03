@@ -15,9 +15,6 @@ func _sleep_variables() -> int:
 	if GlobalScript.rooftop_light_on:
 		sleep_variables.text = "\n[!] Some light is on\n"
 		count += 1
-	if !GlobalScript.is_with_pajamas:
-		sleep_variables.text = "\n[!] Not wearing pajamas\n"
-		count += 1
 		
 	print("Sleep Variables Count: " + str(count))
 	return count

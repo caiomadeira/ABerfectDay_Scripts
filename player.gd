@@ -57,6 +57,7 @@ const JUMP_DESLOCATION = 20
 var _delta := 0.0
 var cameraBobSpeed := 10
 var cameraBobUpDown := 0.3
+var is_zoom_enabled = true
 
 # audio
 var distanceFootstep: = 0.0
@@ -95,22 +96,16 @@ func _input(event):
 		pass
 				
 func process_camera_basic_moviment(event):
-	if GlobalScript.is_mov_enable == true:
+	if GlobalScript.is_resting == false:
+		is_zoom_enabled = true
 		_zoom(event)
-		if GlobalScript.is_resting == false:
-			if event is InputEventMouseMotion:
-				rotate_y(deg_to_rad(-event.relative.x * mouse_sens)) # rotacione o player
-				camera_3d.rotate_x(deg_to_rad(-event.relative.y * mouse_sens)) # rotacao no eixo y
-				camera_3d.rotation.x = clamp(camera_3d.rotation.x, deg_to_rad(-49), deg_to_rad(89)) # clamp limits betweens a min and max values
-		else:
-			_rest_eyes_control(event)
-			if GlobalScript.is_resting:
-				if event is InputEventMouseMotion:
-					pass
-				
-				#camera_3d.rotate_y(deg_to_rad(-event.relative.x * mouse_sens))
-				#camera_3d.rotation.y = clamp(camera_3d.rotation.y, deg_to_rad(-69), deg_to_rad(20))
-				#$DebugLabel.text = "Camera 3D Rotation: " + str(camera_3d.rotation) + "\n"
+		if event is InputEventMouseMotion:
+			rotate_y(deg_to_rad(-event.relative.x * mouse_sens)) # rotacione o player
+			camera_3d.rotate_x(deg_to_rad(-event.relative.y * mouse_sens)) # rotacao no eixo y
+			camera_3d.rotation.x = clamp(camera_3d.rotation.x, deg_to_rad(-49), deg_to_rad(89)) # clamp limits betweens a min and max values
+	else:
+		_rest_eyes_control(event)
+			
 							
 func _process(delta):
 	if GlobalScript.is_mov_enable == true:
@@ -160,6 +155,7 @@ func _control_label_text():
 	control_label.visible = true
 	if GlobalScript.is_resting:
 		control_label.text = "[F] - Leave bed\n [BTN 1] - Close/Open eyes"
+		control_label.add_theme_font_size_override("font_size", 16)
 	elif GlobalScript.computer_is_on:
 		control_label.text = "[L] - Logout"
 	elif GlobalScript.is_sitting:
@@ -225,8 +221,7 @@ func _process_movement(_delta):
 	if GlobalScript.is_mov_enable == true:
 		if !GlobalScript.is_sitting:
 			direction = Vector3.ZERO
-			var h_rot = global_transform.basis.get_euler().y
-			
+			var h_rot = global_transform.basis.get_euler().y	
 			direction.x = -Input.get_action_strength("ui_left") + Input.get_action_strength("ui_right")
 			direction.z = -Input.get_action_strength("ui_up") + Input.get_action_strength("ui_down")
 			direction = Vector3(direction.x, 0, direction.z).rotated(Vector3.UP, h_rot).normalized()
@@ -255,12 +250,15 @@ func _clock(delta):
 	hours_label.text = time_system.start_global_clock(delta)
 	if Input.is_action_just_pressed("h - clock") and !GlobalScript.is_looking_clock:
 		GlobalScript.is_looking_clock = true
-		_ACTION_clock()
+		is_zoom_enabled = false
+		_clock_label()
 		playerAnimationManager.play(interactcast,playerAnimationManager.PlayerActionManager, 
 		playerAnimationManager.PlayerActionManager.ANIMATION_CLOCK_ACTION)
 		
 	if Input.is_action_just_released("h - clock") and GlobalScript.is_looking_clock:
 		GlobalScript.is_looking_clock = false
+		is_zoom_enabled = true
+		_clock_label()
 		playerAnimationManager.play(interactcast,playerAnimationManager.PlayerActionManager,
 		playerAnimationManager.PlayerActionManager.ANIMATION_CLOCK_ACTION)
 		
@@ -280,7 +278,6 @@ func _interact():
 					setup3d_viewer(mesh_utils._get_rigidbody_mesh(interacted))
 				"Game2":
 					setup3d_viewer(mesh_utils._get_rigidbody_mesh(interacted))
-				
 		else:
 			pass
 
@@ -295,13 +292,11 @@ func setup3d_viewer(interacted: Object):
 		viewer_mesh.mesh = interacted.mesh
 
 func _zoom(event):
-	if event is InputEventMouseButton:
+	if event is InputEventMouseButton and !GlobalScript.is_looking_clock:
 		if event.button_index == 2 and event.is_pressed():
-			print("mouse 2 pressed")
-			# camera_3d.projection = 1
 			camera_3d.fov = 60
+			
 		elif event.button_index == 2 and not event.is_pressed():
-			# camera_3d.projection = 0
 			camera_3d.fov = 75
 
 func process_camera_walk_shake(delta):
@@ -320,7 +315,6 @@ func process_camera_walk_shake(delta):
 			objCam = origCameraPos + Vector3.UP * sin(cam_bob) * cameraBobUpDown * .5
 		camera_3d.position = camera_3d.position.lerp(objCam, delta)
 	
-# Player Actions
 func _rest_eyes_control(event):
 	if Input.is_action_just_pressed("click1"):
 		print("closing eyes")
@@ -335,7 +329,7 @@ func _rest_eyes_control(event):
 		await get_tree().create_timer(1.0).timeout
 		GlobalScript.is_eyes_closed = false		
 	
-func _ACTION_clock():
+func _clock_label():
 	if GlobalScript.is_looking_clock:
 		hours_label.visible = true
 		hours_label.z_index = -1
